@@ -1,0 +1,34 @@
+name: Build APK Android
+
+on:
+  workflow_dispatch:      # bisa dijalankan manual dari tab Actions
+  push:
+    tags: ["v*"]          # otomatis jalan saat membuat tag, misal v1.0
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build dengan Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
+
+      - name: Simpan hasil build (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlockPuzzle-apk
+          path: ${{ steps.buildozer.outputs.filename }}
+
+      - name: Publikasikan ke Releases (khusus tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.buildozer.outputs.filename }}
